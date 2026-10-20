@@ -18,6 +18,15 @@ services:
     volumes:
       - /redis-data:/data
 
+  api:
+    build:
+      context: .
+    ports:
+      - ${PORT}:3000
+    depends_on:
+      - db
+      - redis
+
 volumes:
   pg-data:
   redis-data:

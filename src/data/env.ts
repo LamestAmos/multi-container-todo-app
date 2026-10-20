@@ -1,7 +1,8 @@
 import { config } from "dotenv";
+import { expand } from "dotenv-expand";
 import z from "zod";
 
-config({ quiet: true });
+expand(config({ quiet: true }));
 
 const EnvSchema = z.object({
   // POSTGRES
