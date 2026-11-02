@@ -1,24 +1,78 @@
 import { TodoTable } from "../../db/schema.ts";
 import { db } from "../../db/index.ts";
 import { eq } from "drizzle-orm";
+import redisClient from "../../db/redis.ts";
+
+type Todo = {
+  id: string;
+  title: string;
+  content: string;
+  completed: boolean | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+};
 
 export const TodoService = {
-  $get(id: string) {
+  async $get(id: string): Promise<Todo | undefined> {
+    const cache = await redisClient.get(`todos:${id}`);
+    if (cache) {
+      return JSON.parse(cache);
+    }
     return db.query.TodoTable.findFirst({ where: { id } });
   },
-  $getAll() {
-    return db.query.TodoTable.findMany();
+
+  async $getAll(): Promise<Todo[]> {
+    const cache = await redisClient.get("todos");
+    if (cache && this.getAllCacheValid) {
+      return JSON.parse(cache);
+    }
+    const todos = await db.query.TodoTable.findMany();
+    redisClient.set("todos", JSON.stringify(todos));
+    this.getAllCacheValid = true;
+    return todos;
   },
-  $create(title: string, content: string) {
-    return db.insert(TodoTable).values({ title, content }).returning();
+
+  async $create(title: string, content: string) {
+    this.getAllCacheValid = false;
+    const [todo] = await db.insert(TodoTable).values({ title, content }).returning();
+    await this.setCache(todo.id, todo);
+    return todo;
   },
-  $update(id: string, title: string, content: string) {
-    return db.update(TodoTable).set({ title, content }).where(eq(TodoTable.id, id)).returning();
+
+  async $update(id: string, title: string, content: string) {
+    const [todo] = await db
+      .update(TodoTable)
+      .set({ title, content })
+      .where(eq(TodoTable.id, id))
+      .returning();
+    if (!todo) return;
+    this.getAllCacheValid = false;
+    await this.setCache(id, todo);
+    return todo;
   },
-  $delete(id: string) {
-    return db.delete(TodoTable).where(eq(TodoTable.id, id)).returning();
+
+  async $delete(id: string) {
+    const [todo] = await db.delete(TodoTable).where(eq(TodoTable.id, id)).returning();
+    if (!todo) return;
+    this.getAllCacheValid = false;
+    await this.setCache(id, todo);
+    return todo;
   },
-  $toggle(id: string, force?: boolean) {
-    return db.update(TodoTable).set({ completed: force }).where(eq(TodoTable.id, id)).returning();
+
+  async $toggle(id: string, force?: boolean) {
+    const [todo] = await db
+      .update(TodoTable)
+      .set({ completed: force })
+      .where(eq(TodoTable.id, id))
+      .returning();
+    if (!todo) return;
+    this.getAllCacheValid = false;
+    await this.setCache(id, todo);
+    return todo;
   },
+
+  setCache(id: string, todo: Todo) {
+    return redisClient.set(`todos:${id}`, JSON.stringify(todo));
+  },
+  getAllCacheValid: true,
 };

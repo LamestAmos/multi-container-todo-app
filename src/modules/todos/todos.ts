@@ -34,7 +34,7 @@ app.get("/:id", sValidator("param", getTodoSchema), async (ctx) => {
 app.post("/", sValidator("json", createTodoSchema), async (ctx) => {
   const { title, content } = ctx.req.valid("json");
 
-  const [todo] = await TodoService.$create(title, content);
+  const todo = await TodoService.$create(title, content);
 
   return ctx.json({ todo }, 201);
 });
@@ -46,7 +46,7 @@ app.post(
   async (ctx) => {
     const { id } = ctx.req.valid("param");
     const { force } = ctx.req.valid("json");
-    const [todo] = await TodoService.$toggle(id, force);
+    const todo = await TodoService.$toggle(id, force);
 
     if (todo == null) {
       return ctx.json({ message: "Todo Not Found" }, 404);
@@ -65,7 +65,7 @@ app.put(
 
     const { title, content } = ctx.req.valid("json");
 
-    const [todo] = await TodoService.$update(id, title, content);
+    const todo = await TodoService.$update(id, title, content);
 
     if (todo == null) {
       return ctx.json({ message: "Todo Not Found" }, 404);
@@ -78,7 +78,7 @@ app.put(
 app.delete("/:id", sValidator("param", getTodoSchema), async (ctx) => {
   const { id } = ctx.req.valid("param");
 
-  const [todo] = await TodoService.$delete(id);
+  const todo = await TodoService.$delete(id);
 
   if (todo == null) {
     return ctx.json({ message: "Todo Not Found" }, 404);
