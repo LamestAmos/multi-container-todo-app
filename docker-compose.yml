@@ -10,13 +10,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: ${POSTGRES_NAME}
     volumes:
-      - ./pg-data:/var/lib/postgresql
+      - pg-data:/var/lib/postgresql
 
   redis:
     image: redis:8
     restart: always
     volumes:
-      - ./redis-data:/data
+      - redis-data:/data
 
   api:
     build:

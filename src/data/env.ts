@@ -14,6 +14,7 @@ const EnvSchema = z.object({
 
   // REDIS
   REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_HOST: z.string().min(1),
 
   // MISC
   PORT: z.coerce.number().default(3000),

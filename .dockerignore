@@ -3,3 +3,7 @@ node_modules
 .gitignore
 *.md
 dist
+pg-data
+redis-data
+.http/*
+*.http
